@@ -16,6 +16,7 @@ void count_dist(k4a_float3_t lhPalm, k4a_float3_t lhElbow, k4a_float3_t lShoulde
                 std::vector<double> *dist_palm_elbowL, std::vector<double> *dist_elbow_shoulderL,
                 std::vector<double> *dist_palm_shoulderL, std::vector<double> *dist_chest_elbowL,
                 std::vector<double> *dist_palm_elbowR, std::vector<double> *dist_elbow_shoulderR,
-                std::vector<double> *dist_palm_shoulderR, std::vector<double> *dist_chest_elbowR);
+                std::vector<double> *dist_palm_shoulderR, std::vector<double> *dist_chest_elbowR,
+                std::vector<double> *dist_rPalm_chest);
 
 #endif //LODUHOVA_BP_HELPER_FUNCTION_H

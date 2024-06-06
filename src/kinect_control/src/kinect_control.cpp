@@ -22,6 +22,7 @@ using namespace std::chrono_literals;
 #define R_SHOULDER 12
 #define CHEST 2
 #define DEVIATION_GEST 0.05
+#define DEVIATION_PALM_CHEST 0.15
 #define DEVIATION_CHEST 0.4
 
 
@@ -42,9 +43,14 @@ public:
     }
 
     void initMoveGroup(std::string gesture);
+
     void move(geometry_msgs::msg::Pose targetPose);
+
     void home_position();
+
     void down_position();
+
+    void up_position();
 
     const std::string PLANNING_GROUP = "ur_manipulator";
     const std::string END_EFFECTOR_LINK = "tool0";
@@ -89,7 +95,6 @@ void KinectControl::home_position() {
     pose.orientation.w = -0.00023792324645910412;
     pose.position.x = 1.18;
     pose.position.y = 0.2;
-
     pose.position.z = 0.5;
     move(pose);
 }
@@ -103,6 +108,18 @@ void KinectControl::down_position() {
     pose.position.x = 1.18;
     pose.position.y = 0.2;
     pose.position.z = 0.18;
+    move(pose);
+}
+
+void KinectControl::up_position() {
+    geometry_msgs::msg::Pose pose;
+    pose.orientation.x = 0.0;
+    pose.orientation.y = -0.7;
+    pose.orientation.z = 0.7;
+    pose.orientation.w = -0.0;
+    pose.position.x = 1.18;
+    pose.position.y = -0.03;
+    pose.position.z = 0.43;
     move(pose);
 }
 
@@ -125,6 +142,8 @@ void KinectControl::initMoveGroup(std::string gesture) {
         // Down position
     else if (gesture == "down") {
         down_position();
+    } else if (gesture == "up") {
+        up_position();
     }
     return;
 }
@@ -134,7 +153,7 @@ bool gesture_check(std::vector<double> *dist_palm_elbow, std::vector<double> *di
                    std::vector<double> *dist_palm_shoulder, std::vector<double> *dist_chest_elbow,
                    std::vector<double> *dist_palm_elbowR, std::vector<double> *dist_elbow_shoulderR,
                    std::vector<double> *dist_palm_shoulderR, std::vector<double> *dist_chest_elbowR,
-                   std::string *gesture) {
+                   std::vector<double> *dist_rPalmChest, std::string *gesture) {
 
     float aa_left = dist_palm_elbow->at(0) * dist_palm_elbow->at(0);
     float bb_left = dist_elbow_shoulder->at(0) * dist_elbow_shoulder->at(0);
@@ -144,7 +163,7 @@ bool gesture_check(std::vector<double> *dist_palm_elbow, std::vector<double> *di
     float bb_right = dist_elbow_shoulderR->at(0) * dist_elbow_shoulderR->at(0);
     float cc_right = dist_palm_shoulderR->at(0) * dist_palm_shoulderR->at(0);
 
-    // Elbows are not in the same line with the chest
+    // Both elbows are in the same line with the chest
     if (dist_chest_elbow->at(0) > DEVIATION_CHEST && dist_chest_elbowR->at(0) > DEVIATION_CHEST) {
         gesture->assign("NGR");   // No gesture recognized
         return false;
@@ -163,8 +182,13 @@ bool gesture_check(std::vector<double> *dist_palm_elbow, std::vector<double> *di
             return false;
         }
     } else {
-        gesture->assign("NGR");   // No gesture recognized
-        return false;
+        if (dist_rPalmChest->at(0) - DEVIATION_PALM_CHEST < 0.0 && 0.0 < dist_rPalmChest->at(0) + DEVIATION_PALM_CHEST) {
+            gesture->assign("up");
+            return true;
+        } else {
+            gesture->assign("NGR");   // No gesture recognized
+            return false;
+        }
     }
 }
 
@@ -242,14 +266,15 @@ int main(int argc, char **argv) {
 //                           body.skeleton.joints[LH_PALM].position.v[2]);
 
                     std::vector<double> dist_palm_elbow, dist_elbow_shoulder, dist_palm_shoulder, dist_chest_elbow,
-                            dist_palm_elbowR, dist_elbow_shoulderR, dist_palm_shoulderR, dist_chest_elbowR;
+                            dist_palm_elbowR, dist_elbow_shoulderR, dist_palm_shoulderR, dist_chest_elbowR, dist_rPalm_chest;
 
                     count_dist(body.skeleton.joints[LH_PALM].position, body.skeleton.joints[LH_ELBOW].position,
                                body.skeleton.joints[L_SHOULDER].position, body.skeleton.joints[CHEST].position,
                                body.skeleton.joints[RH_PALM].position, body.skeleton.joints[RH_ELBOW].position,
                                body.skeleton.joints[R_SHOULDER].position,
                                &dist_palm_elbow, &dist_elbow_shoulder, &dist_palm_shoulder, &dist_chest_elbow,
-                               &dist_palm_elbowR, &dist_elbow_shoulderR, &dist_palm_shoulderR, &dist_chest_elbowR);
+                               &dist_palm_elbowR, &dist_elbow_shoulderR, &dist_palm_shoulderR, &dist_chest_elbowR,
+                               &dist_rPalm_chest);
 
 //                    RCLCPP_INFO(logger,
 //                                "\npalm-elbow = %f, elbow-shoulder = %f, palm-shoulder = %f, chest-elbow = %f\n",
@@ -264,7 +289,8 @@ int main(int argc, char **argv) {
 
                     bool gesture_recognized = gesture_check(&dist_palm_elbow, &dist_elbow_shoulder, &dist_palm_shoulder,
                                                             &dist_chest_elbow, &dist_palm_elbowR, &dist_elbow_shoulderR,
-                                                            &dist_palm_shoulderR, &dist_chest_elbowR, &gesture);
+                                                            &dist_palm_shoulderR, &dist_chest_elbowR, &dist_rPalm_chest,
+                                                            &gesture);
                     if (gesture_recognized) {
                         RCLCPP_INFO(logger, "\nGesture recognized !!\n\n");
                         myfile << "Gesture recognized !!\n\n";

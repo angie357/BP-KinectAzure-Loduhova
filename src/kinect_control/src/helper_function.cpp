@@ -9,10 +9,11 @@ void count_dist(k4a_float3_t lhPalm, k4a_float3_t lhElbow, k4a_float3_t lShoulde
                 std::vector<double> *dist_palm_elbowL, std::vector<double> *dist_elbow_shoulderL,
                 std::vector<double> *dist_palm_shoulderL, std::vector<double> *dist_chest_elbowL,
                 std::vector<double> *dist_palm_elbowR, std::vector<double> *dist_elbow_shoulderR,
-                std::vector<double> *dist_palm_shoulderR, std::vector<double> *dist_chest_elbowR) {
+                std::vector<double> *dist_palm_shoulderR, std::vector<double> *dist_chest_elbowR,
+                std::vector<double> *dist_rPalm_chest) {
 
-    double dist_Palm_Elbow, dist_Elbow_Shoulder, dist_Palm_Shoulder, dist_chest_Elbow;
-    double dX_palmElbow, dY_palmElbow, dZ_palmElbow;
+    double dist_Palm_Elbow, dist_Elbow_Shoulder, dist_Palm_Shoulder, dist_chest_Elbow, dist_rPalm_Chest;
+    double dX_palmElbow, dY_palmElbow, dZ_palmElbow, dX_rPalm_Chest, dY_rPalm_Chest, dZ_rPalm_Chest;
     double dX_elbowShoulder, dY_elbowShoulder, dZ_elbowShoulder;
     double dX_palmShoulder, dY_palmShoulder, dZ_palmShoulder;
     double dX_chestElbow, dY_chestElbow, dZ_chestElbow;
@@ -76,4 +77,12 @@ void count_dist(k4a_float3_t lhPalm, k4a_float3_t lhElbow, k4a_float3_t lShoulde
     dist_elbow_shoulderR->push_back(dist_Elbow_Shoulder);
     dist_palm_shoulderR->push_back(dist_Palm_Shoulder);
     dist_chest_elbowR->push_back(dist_chest_Elbow);
+
+    // RIGHT PALM TO CHEST ---------------------------------------------------------------------------------------
+    dX_rPalm_Chest = std::abs(rhPalm.v[0] / 1000 - chest.v[0] / 1000);
+    dY_rPalm_Chest = std::abs(rhPalm.v[1] / 1000 - chest.v[1] / 1000);
+    dZ_rPalm_Chest = std::abs(rhPalm.v[2] / 1000 - chest.v[2] / 1000);
+
+    dist_rPalm_Chest = sqrt(dX_rPalm_Chest * dX_rPalm_Chest + dY_rPalm_Chest * dY_rPalm_Chest + dZ_rPalm_Chest * dZ_rPalm_Chest);
+    dist_rPalm_chest->push_back(dist_rPalm_Chest);
 }
