@@ -1,4 +1,4 @@
-cas,palm-elbowL,elbow-shoulderL,palm-shoulderL,chest-elbowL,palm-elbowR,elbow-shoulderR,palm-shoulderR,chest-elbowR,rPalm-chest,success
+time,palm-elbowL,elbow-shoulderL,palm-shoulderL,chest-elbowL,palm-elbowR,elbow-shoulderR,palm-shoulderR,chest-elbowR,rPalm-chest,success
 Thu Jun  6 20:24:16 2024,0.310082,0.265319,0.520502,0.271164,0.315911,0.270339,0.414381,0.450621,0.573425,1
 Thu Jun  6 20:24:22 2024,0.284736,0.263832,0.507703,0.259789,0.30164,0.268823,0.425401,0.454989,0.630711,1
 Thu Jun  6 20:24:24 2024,0.28728,0.265243,0.513394,0.261533,0.300789,0.270261,0.433919,0.457398,0.641926,1
