@@ -2,3 +2,9 @@
 /install/
 /log/
 /main_node
+/.idea
+/.idea/.gitignore
+/.idea/BP-KinectAzure-Loduhova.iml
+/.idea/editor.xml
+/.idea/modules.xml
+/.idea/vcs.xml
