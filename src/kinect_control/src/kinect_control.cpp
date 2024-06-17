@@ -21,9 +21,9 @@ using namespace std::chrono_literals;
 #define L_SHOULDER 5
 #define R_SHOULDER 12
 #define CHEST 2
-#define DEVIATION_GEST 0.01 // Good - 0.05, tough - 0.01
+#define DEVIATION_GEST 0.05 // Good - 0.05, tough - 0.01
 #define DEVIATION_PALM_CHEST 0.15
-#define DEVIATION_CHEST 0.28  // Good - 0.4, tough - 0.28
+#define DEVIATION_CHEST 0.4  // Good - 0.4, tough - 0.28
 
 
 #define VERIFY(result, error)                                                                                          \
@@ -35,6 +35,7 @@ using namespace std::chrono_literals;
 
 using namespace std::chrono_literals;
 
+// Create a class for robot control using kinect
 class KinectControl : public rclcpp::Node {
 public:
     KinectControl() : Node("kinect_control") {
@@ -63,6 +64,8 @@ private:
     std::shared_ptr<tf2_ros::TransformListener> tf_listener{};
 };
 
+
+// Move to target pose
 void KinectControl::move(geometry_msgs::msg::Pose targetPose) {
     // Set a target Pose
     using moveit::planning_interface::MoveGroupInterface;
@@ -87,6 +90,7 @@ void KinectControl::move(geometry_msgs::msg::Pose targetPose) {
     }
 }
 
+// Home position
 void KinectControl::home_position() {
     geometry_msgs::msg::Pose pose;
     pose.orientation.x = -0.0028119066264480352;
@@ -99,6 +103,7 @@ void KinectControl::home_position() {
     move(pose);
 }
 
+// Down position
 void KinectControl::down_position() {
     geometry_msgs::msg::Pose pose;
     pose.orientation.x = -0.0028119066264480352;
@@ -111,6 +116,7 @@ void KinectControl::down_position() {
     move(pose);
 }
 
+// Up position
 void KinectControl::up_position() {
     geometry_msgs::msg::Pose pose;
     pose.orientation.x = 0.0;
@@ -123,7 +129,7 @@ void KinectControl::up_position() {
     move(pose);
 }
 
-
+// Initialize move group
 void KinectControl::initMoveGroup(std::string gesture) {
     using moveit::planning_interface::MoveGroupInterface;
     move_group_interface = std::make_shared<moveit::planning_interface::MoveGroupInterface>(shared_from_this(),
@@ -139,10 +145,12 @@ void KinectControl::initMoveGroup(std::string gesture) {
     if (gesture == "home") {
         home_position();
     }
-        // Down position
+    // Down position
     else if (gesture == "down") {
         down_position();
-    } else if (gesture == "up") {
+    }
+    // Up position
+    else if (gesture == "up") {
         up_position();
     }
     return;
@@ -154,6 +162,7 @@ bool gesture_check(std::vector<double> *dist_palm_elbow, std::vector<double> *di
                    std::vector<double> *dist_palm_shoulderR, std::vector<double> *dist_chest_elbowR,
                    std::vector<double> *dist_rPalmChest, std::string *gesture) {
 
+    // Using Pythagorean theorem to calculate the ideal distance between the points
     float aa_left = dist_palm_elbow->at(0) * dist_palm_elbow->at(0);
     float bb_left = dist_elbow_shoulder->at(0) * dist_elbow_shoulder->at(0);
     float cc_left = dist_palm_shoulder->at(0) * dist_palm_shoulder->at(0);
@@ -162,11 +171,14 @@ bool gesture_check(std::vector<double> *dist_palm_elbow, std::vector<double> *di
     float bb_right = dist_elbow_shoulderR->at(0) * dist_elbow_shoulderR->at(0);
     float cc_right = dist_palm_shoulderR->at(0) * dist_palm_shoulderR->at(0);
 
+
     // Both elbows are in the same line with the chest
     if (dist_chest_elbow->at(0) > DEVIATION_CHEST && dist_chest_elbowR->at(0) > DEVIATION_CHEST) {
         gesture->assign("NGR");   // No gesture recognized
         return false;
-    } else if (dist_chest_elbow->at(0) > DEVIATION_CHEST || dist_chest_elbowR->at(0) > DEVIATION_CHEST) {
+    }
+    // Only one elbow is in the same line with the chest
+    else if (dist_chest_elbow->at(0) > DEVIATION_CHEST || dist_chest_elbowR->at(0) > DEVIATION_CHEST) {
         // Left hand up
         if (dist_chest_elbow->at(0) > DEVIATION_CHEST) {
             if (cc_left - DEVIATION_GEST < aa_left + bb_left && aa_left + bb_left < cc_left + DEVIATION_GEST) {
@@ -174,22 +186,25 @@ bool gesture_check(std::vector<double> *dist_palm_elbow, std::vector<double> *di
                 return true;
             }
         }
-            // Right hand up
+        // Right hand up
         else if (dist_chest_elbowR->at(0) > DEVIATION_CHEST) {
             if (cc_right - DEVIATION_GEST < aa_right + bb_right && aa_right + bb_right < cc_right + DEVIATION_GEST) {
                 gesture->assign("down");
                 return true;
             }
-        } else {
+        }
+        else {
             gesture->assign("NGR");   // No gesture recognized
             return false;
         }
-    } else {    // Right hand on the chest
-        if (dist_rPalmChest->at(0) < DEVIATION_PALM_CHEST &&
-            dist_rPalmChest->at(0) > -DEVIATION_PALM_CHEST) {
+    }
+    // Right hand on the chest
+    else {
+        if (dist_rPalmChest->at(0) < DEVIATION_PALM_CHEST && dist_rPalmChest->at(0) > -DEVIATION_PALM_CHEST) {
             gesture->assign("up");
             return true;
-        } else {
+        }
+        else {
             gesture->assign("NGR");   // No gesture recognized
             return false;
         }
@@ -205,12 +220,14 @@ int main(int argc, char **argv) {
     auto kinect_control = std::make_shared<KinectControl>();
     printf("kinect_control_cpp init KinectControl\n\n\n");
 
+    // Logger
     auto const logger = rclcpp::get_logger("kinect_control");
 
-    std::ofstream myfile("chest_tough.txt");
-    myfile
-            << "cas,palm-elbowL,elbow-shoulderL,palm-shoulderL,chest-elbowL,palm-elbowR,elbow-shoulderR,palm-shoulderR,chest-elbowR,rPalm-chest,gesture,success\n";
-    std::string gesture;
+    // Open file for writing
+//    std::ofstream myfile("chest_tough.txt");
+//    myfile
+//            << "cas,palm-elbowL,elbow-shoulderL,palm-shoulderL,chest-elbowL,palm-elbowR,elbow-shoulderR,palm-shoulderR,chest-elbowR,rPalm-chest,gesture,success\n";
+//    std::string gesture;
 
 
     // Kinect device initialization -----------------------------------------------------
@@ -249,17 +266,17 @@ int main(int argc, char **argv) {
                 printf("Error! Add capture to tracker process queue failed!\n");
                 break;
             }
-
             k4abt_frame_t body_frame = NULL;
             k4a_wait_result_t pop_frame_result = k4abt_tracker_pop_result(tracker, &body_frame, K4A_WAIT_INFINITE);
             if (pop_frame_result == K4A_WAIT_RESULT_SUCCEEDED) {
                 // Successfully popped the body tracking result. Start your processing
 
+
+                // Main function for gesture recognition starts here -------------------------------------------------
                 size_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
                 //printf("%zu bodies are detected!\n", num_bodies);
 
-
-
+                // Only one body is detected
                 if (num_bodies == 1) {
                     k4abt_body_t body;
                     gesture = "";
@@ -281,35 +298,44 @@ int main(int argc, char **argv) {
                                &dist_palm_elbowR, &dist_elbow_shoulderR, &dist_palm_shoulderR, &dist_chest_elbowR,
                                &dist_rPalm_chest);
 
-                    time_t now = time(0);
-                    char *dt = ctime(&now);
-                    dt[strlen(dt) - 1] = '\0'; // remove newline character from ctime
+                    // Get current date and time for logging purposes
+//                    time_t now = time(0);
+//                    char *dt = ctime(&now);
+//                    dt[strlen(dt) - 1] = '\0'; // remove newline character from ctime
 
-                    // cas,palm-elbowL,elbow-shoulderL,palm-shoulderL,chest-elbowL,palm-elbowR,elbow-shoulderR,palm-shoulderR,chest-elbowR,rPalm-chest,gesture,success
-                    myfile << dt << "," << dist_palm_elbow[0] << "," << dist_elbow_shoulder[0] << ","
-                           << dist_palm_shoulder[0]
-                           << "," << dist_chest_elbow[0] << "," << dist_palm_elbowR[0] << "," << dist_elbow_shoulderR[0]
-                           << "," << dist_palm_shoulderR[0] << "," << dist_chest_elbowR[0] << "," << dist_rPalm_chest[0]
-                           << ",";
+                    // Write the data to the file
+                    // data : cas,palm-elbowL,elbow-shoulderL,palm-shoulderL,chest-elbowL,palm-elbowR,elbow-shoulderR,palm-shoulderR,chest-elbowR,rPalm-chest,gesture,success
+//                    myfile << dt << "," << dist_palm_elbow[0] << "," << dist_elbow_shoulder[0] << ","
+//                           << dist_palm_shoulder[0]
+//                           << "," << dist_chest_elbow[0] << "," << dist_palm_elbowR[0] << "," << dist_elbow_shoulderR[0]
+//                           << "," << dist_palm_shoulderR[0] << "," << dist_chest_elbowR[0] << "," << dist_rPalm_chest[0]
+//                           << ",";
 
+                    // Check if the gesture is recognized
                     bool gesture_recognized = gesture_check(&dist_palm_elbow, &dist_elbow_shoulder, &dist_palm_shoulder,
                                                             &dist_chest_elbow, &dist_palm_elbowR, &dist_elbow_shoulderR,
                                                             &dist_palm_shoulderR, &dist_chest_elbowR, &dist_rPalm_chest,
                                                             &gesture);
                     if (gesture_recognized) {
                         RCLCPP_INFO(logger, "\nGesture recognized !!\n\n");
-                        myfile << "1\n";
+//                        myfile << "1\n";
                     } else {
                         RCLCPP_INFO(logger, "\nGesture not recognized !!\n\n");
-                        myfile << "0\n";
+//                        myfile << "0\n";
                     }
+                    // Initialize move group
                     kinect_control->initMoveGroup(gesture);
-                    RCLCPP_INFO(logger, "--------------- DONE ------------------------ !!");
+                    RCLCPP_INFO(logger, "--------------- DONE ------------------------ !!\n\n\n");
                     sleep(1);
-                } else {
-                    RCLCPP_INFO(logger, "\nToo many or too few bodies detected !!\n\n");
-                    myfile << "Too many or too few bodies detected !!\n\n";
                 }
+                // Too many or too few bodies detected
+                else {
+                    RCLCPP_INFO(logger, "\nToo many or too few bodies detected !!\n\n");
+//                    myfile << "Too many or too few bodies detected !!\n\n";
+                }
+                // End of main gesture recognition function --------------------------------------------------------------
+
+
                 k4abt_frame_release(body_frame); // Remember to release the body frame once you finish using it
             } else if (pop_frame_result == K4A_WAIT_RESULT_TIMEOUT) {
                 //  It should never hit timeout when K4A_WAIT_INFINITE is set.
@@ -328,9 +354,9 @@ int main(int argc, char **argv) {
             break;
         }
 
-    } while (frame_count < 15);
+    } while (frame_count < 250);
 
-    myfile.close();
+//    myfile.close();
 
     printf("Finished body tracking processing!\n");
 
@@ -339,9 +365,6 @@ int main(int argc, char **argv) {
     k4a_device_stop_cameras(device);
     k4a_device_close(device);
 
-    printf("hello world kinect_control package\n");
-    //rclcpp::spin(kinect_control);
-    //    // Shutdown ROS
     rclcpp::shutdown();
     return 0;
 }

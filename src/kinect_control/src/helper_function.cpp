@@ -48,6 +48,7 @@ void count_dist(k4a_float3_t lhPalm, k4a_float3_t lhElbow, k4a_float3_t lShoulde
     dist_palm_shoulderL->push_back(dist_Palm_Shoulder);
     dist_chest_elbowL->push_back(dist_chest_Elbow);
 
+
     // RIGHT SIDE -----------------------------------------------------------------------------------------------
     dX_palmElbow = std::abs(rhPalm.v[0] / 1000 - rhElbow.v[0] / 1000);
     dY_palmElbow = std::abs(rhPalm.v[1] / 1000 - rhElbow.v[1] / 1000);
