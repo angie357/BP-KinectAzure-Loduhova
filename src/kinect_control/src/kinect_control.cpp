@@ -227,7 +227,8 @@ int main(int argc, char **argv) {
 //    std::ofstream myfile("chest_tough.txt");
 //    myfile
 //            << "cas,palm-elbowL,elbow-shoulderL,palm-shoulderL,chest-elbowL,palm-elbowR,elbow-shoulderR,palm-shoulderR,chest-elbowR,rPalm-chest,gesture,success\n";
-//    std::string gesture;
+
+    std::string gesture;
 
 
     // Kinect device initialization -----------------------------------------------------
